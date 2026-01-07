@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>社群录课排班表 (云同步版)</title>
+<script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
+<style>
+    body { font-family: "Microsoft YaHei", sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; user-select: none; }
+    .card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 90%; max-width: 400px; text-align: center; position: relative; overflow: hidden; }
+    h2 { color: #333; margin-bottom: 10px; }
+    .date-info { color: #666; font-size: 0.9em; margin-bottom: 20px; }
+    
+    /* 排班列表 */
+    #scheduleList { display: block; }
+    .role-box { background: #eef2f5; margin: 10px 0; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; transition: all 0.3s; }
+    .role-name { font-weight: bold; color: #2c3e50; }
+    .teacher-name { font-size: 1.2em; color: #007bff; font-weight: bold; }
+    .skip-box { background: #fff3cd; color: #856404; }
+    .skip-box .teacher-name { color: #856404; font-size: 1em; }
+
+    /* 冻结模式界面 */
+    .freeze-view { display: none; padding: 20px 0; animation: fadeIn 0.5s; }
+    .freeze-icon { font-size: 4em; margin-bottom: 15px; display: block; }
+    .freeze-sub { color: #888; font-size: 0.9em; margin-top: 10px; }
+    #holidayMode .freeze-text { color: #28a745; font-size: 1.2em; font-weight: bold; }
+    #tempFreezeMode .freeze-text { color: #fd7e14; font-size: 1.2em; font-weight: bold; }
+
+    /* 底部区域 */
+    .footer { margin-top: 20px; font-size: 0.8em; color: #aaa; cursor: pointer; padding: 10px; border-radius: 5px; }
+    .status-badge { display: inline-block; font-size: 0.8em; padding: 2px 8px; border-radius: 10px; margin-top: 5px; }
+    .status-delayed { background-color: #f8d7da; color: #721c24; }
+
+    /* 管理面板 */
+    #adminModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
+    .modal-content { background: white; padding: 25px; border-radius: 10px; width: 85%; max-width: 320px; text-align: center; }
+    .modal-btn { margin: 8px 0; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; width: 100%; font-weight: bold; transition: 0.2s; }
+    .btn-holiday { background: #28a745; color: white; } 
+    .btn-temp { background: #fd7e14; color: white; }    
+    .btn-resume { background: #007bff; color: white; }  
+    .btn-adjust { background: #ffc107; color: #333; width: 48%; display: inline-block; font-size: 12px; }
+    .btn-close { background: #6c757d; color: white; margin-top: 15px; }
+    .divider { height: 1px; background: #eee; margin: 15px 0; }
+    
+    /* 加载遮罩 */
+    .loading-mask { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 20; display: flex; justify-content: center; align-items: center; color: #666; font-size: 0.9rem; flex-direction: column;}
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="card">
+    <div id="loadingMask" class="loading-mask">
+        <div style="font-size: 2em; margin-bottom: 10px;">☁️</div>
+        正在同步云端数据...
+    </div>
+
+    <h2>📅 社群录课排班表</h2>
+    <div class="date-info" id="currentDate"></div>
+    <div id="statusArea"></div>
+
+    <div id="scheduleList">
+        <div class="role-box"><span class="role-name">初一</span><span class="teacher-name" id="g1">--</span></div>
+        <div class="role-box"><span class="role-name">初二</span><span class="teacher-name" id="g2">--</span></div>
+        <div class="role-box"><span class="role-name">初三</span><span class="teacher-name" id="g3">--</span></div>
+        <div class="role-box skip-box"><span class="role-name">☕ 轮空</span><span class="teacher-name" id="skip">--</span></div>
+    </div>
+
+    <div id="holidayMode" class="freeze-view">
+        <span class="freeze-icon">🏖️</span>
+        <div class="freeze-text">寒暑假暂停中</div>
+        <div class="freeze-sub">进度已冻结，安心度假！</div>
+        <div style="font-size:0.8em; color:#999; margin-top:15px;" class="freeze-info"></div>
+    </div>
+
+    <div id="tempFreezeMode" class="freeze-view">
+        <span class="freeze-icon">⏸️</span>
+        <div class="freeze-text">临时暂停排班</div>
+        <div class="freeze-sub">特殊情况处理中，进度已保留</div>
+        <div style="font-size:0.8em; color:#999; margin-top:15px;" class="freeze-info"></div>
+    </div>
+
+    <div class="footer" id="secretTrigger" title="连续点击5次打开设置">
+        基准日：2025-12-01 (康王石何丁)
+    </div>
+</div>
+
+<div id="adminModal">
+    <div class="modal-content">
+        <h3>⚙️ 云端管理后台</h3>
+        <p style="font-size:0.85em; color:#666;">当前状态：<span id="modalStatusText">读取中...</span></p>
+        <div id="syncStatus" style="font-size:0.75em; color:#999; margin-bottom:10px;"></div>
+        
+        <div id="runningControls">
+            <button class="modal-btn btn-holiday" onclick="startFreeze('holiday')">🏖️ 开启寒暑假 (长期)</button>
+            <button class="modal-btn btn-temp" onclick="startFreeze('temp')">⏸️ 开启临时冻结 (短期)</button>
+        </div>
+        
+        <div id="pausedControls" style="display:none;">
+            <button class="modal-btn btn-resume" onclick="endFreeze()">▶️ 恢复正常排班</button>
+        </div>
+        
+        <div class="divider"></div>
+        <p style="font-size:0.8em; color:#999; margin:5px 0;">特殊情况微调 (当前延后: <span id="offsetVal">0</span>周)</p>
+        <div>
+            <button class="modal-btn btn-adjust" onclick="adjustOffset(1)">+1周 (跳过)</button>
+            <button class="modal-btn btn-adjust" onclick="adjustOffset(-1)">-1周 (回退)</button>
+        </div>
+        <button class="modal-btn btn-close" onclick="closeAdmin()">关闭</button>
+    </div>
+</div>
+
+<script>
+    // ================= 配置区 =================
+    // 你的ID和Key (已配置好服务器地址)
+    const LC_APP_ID = "1OHISQN99CFPAQn6K0aZQRpm-gzGzoHsz"; 
+    const LC_APP_KEY = "y0pWlEyJrFr3P4LYu7GkIYfK";
+    const LC_SERVER_URL = "https://1ohisqn9.lc-cn-n1-shared.com";
+
+    // 🔴 关键：这里使用的是新表名
+    const DB_CLASS_NAME = 'ClassScheduleConfig';
+
+    const baseDate = new Date('2025-12-01T00:00:00');
+    const teachers = ["康康老师", "王老师", "石老师", "何老师", "丁老师"];
+    const ADMIN_PASSWORD = "888"; 
+    // =========================================
+
+    let globalState = {
+        freezeMode: 'none',   // 'none', 'holiday', 'temp'
+        offset: 0,            // 手动调整的周数
+        frozenEffective: 0,   // 冻结时的有效周数
+        objectId: null        // 云端ID
+    };
+
+    let isCloudReady = false;
+
+    // 初始化
+    if (typeof AV === 'undefined') {
+        document.getElementById('loadingMask').innerHTML = "云端脚本加载失败<br>请检查网络";
+    } else {
+        try {
+            AV.init({ appId: LC_APP_ID, appKey: LC_APP_KEY, serverURLs: LC_SERVER_URL });
+            isCloudReady = true;
+            fetchCloudData();
+        } catch(e) { console.error(e); }
+    }
+
+    // 1. 获取数据
+    async function fetchCloudData() {
+        if(!isCloudReady) return;
+        const query = new AV.Query(DB_CLASS_NAME);
+        try {
+            const results = await query.find();
+            if (results.length > 0) {
+                const data = results[0];
+                globalState.freezeMode = data.get('freezeMode') || 'none';
+                globalState.offset = data.get('offset') || 0;
+                globalState.frozenEffective = data.get('frozenEffective') || 0;
+                globalState.objectId = data.id;
+            } else {
+                // 初始化新数据 (带权限锁修复)
+                const Config = AV.Object.extend(DB_CLASS_NAME);
+                const config = new Config();
+                config.set('freezeMode', 'none');
+                config.set('offset', 0);
+                config.set('frozenEffective', 0);
+                
+                // 开启公共读写权限
+                const acl = new AV.ACL();
+                acl.setPublicReadAccess(true);
+                acl.setPublicWriteAccess(true);
+                config.setACL(acl);
+
+                const saved = await config.save();
+                globalState.objectId = saved.id;
+            }
+            document.getElementById('loadingMask').style.display = 'none';
+            updateUI(); 
+        } catch (error) {
+            console.error(error);
+            document.getElementById('loadingMask').innerHTML = "网络连接失败<br><button onclick='location.reload()'>刷新</button>";
+        }
+    }
+
+    // 2. 保存数据
+    async function saveToCloud() {
+        if(!globalState.objectId) return;
+        const statusDiv = document.getElementById('syncStatus');
+        statusDiv.innerText = "☁️ 正在同步到云端...";
+        
+        const config = AV.Object.createWithoutData(DB_CLASS_NAME, globalState.objectId);
+        config.set('freezeMode', globalState.freezeMode);
+        config.set('offset', globalState.offset);
+        config.set('frozenEffective', globalState.frozenEffective);
+        
+        try {
+            await config.save();
+            statusDiv.innerText = "✅ 同步成功";
+            setTimeout(() => statusDiv.innerText = "", 2000);
+            updateUI();
+        } catch (error) {
+            alert("同步失败：" + error.message);
+            statusDiv.innerText = "❌ 同步失败";
+        }
+    }
+
+    function updateDateDisplay() {
+        const today = new Date();
+        const options = { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' };
+        document.getElementById('currentDate').innerText = today.toLocaleDateString('zh-CN', options);
+    }
+
+    function getRealWeeks() {
+        const today = new Date();
+        const diffTime = today - baseDate;
+        return Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7));
+    }
+
+    function getSchedule() {
+        updateDateDisplay();
+        const realWeeks = getRealWeeks();
+        const effectiveWeeks = realWeeks - globalState.offset;
+
+        let shift = effectiveWeeks % 5;
+        if (shift < 0) shift = 5 + shift;
+
+        const currentList = [];
+        for (let i = 0; i < 5; i++) {
+            let originalIndex = (i - shift + 5) % 5;
+            currentList.push(teachers[originalIndex]);
+        }
+
+        document.getElementById('g1').innerText = currentList[0];
+        document.getElementById('g2').innerText = currentList[1];
+        document.getElementById('g3').innerText = currentList[2];
+        document.getElementById('skip').innerText = currentList[3] + "、" + currentList[4];
+
+        const statusDiv = document.getElementById('statusArea');
+        if (globalState.offset !== 0 && globalState.freezeMode === 'none') {
+            statusDiv.innerHTML = `<span class="status-badge status-delayed">⚠️ 排班偏移 ${globalState.offset} 周</span>`;
+        } else {
+            statusDiv.innerHTML = ``;
+        }
+    }
+
+    function updateUI() {
+        const listDiv = document.getElementById('scheduleList');
+        const holidayDiv = document.getElementById('holidayMode');
+        const tempDiv = document.getElementById('tempFreezeMode');
+        
+        const runCtrl = document.getElementById('runningControls');
+        const pauseCtrl = document.getElementById('pausedControls');
+        const modalStatus = document.getElementById('modalStatusText');
+
+        listDiv.style.display = 'none';
+        holidayDiv.style.display = 'none';
+        tempDiv.style.display = 'none';
+
+        const freezeInfoText = globalState.frozenEffective ? `(进度已冻结在第 ${globalState.frozenEffective} 轮)` : '';
+
+        if (globalState.freezeMode === 'holiday') {
+            holidayDiv.style.display = 'block';
+            document.querySelectorAll('.freeze-info').forEach(el => el.innerText = freezeInfoText);
+            runCtrl.style.display = 'none';
+            pauseCtrl.style.display = 'block';
+            modalStatus.innerText = "🏖️ 假期暂停中";
+            modalStatus.style.color = "#28a745";
+
+        } else if (globalState.freezeMode === 'temp') {
+            tempDiv.style.display = 'block';
+            document.querySelectorAll('.freeze-info').forEach(el => el.innerText = freezeInfoText);
+            runCtrl.style.display = 'none';
+            pauseCtrl.style.display = 'block';
+            modalStatus.innerText = "⏸️ 临时冻结中";
+            modalStatus.style.color = "#fd7e14";
+
+        } else {
+            listDiv.style.display = 'block';
+            runCtrl.style.display = 'block';
+            pauseCtrl.style.display = 'none';
+            modalStatus.innerText = "🔄 正常轮转中";
+            modalStatus.style.color = "#007bff";
+            getSchedule(); 
+        }
+        document.getElementById('offsetVal').innerText = globalState.offset;
+    }
+
+    // ================= 操作逻辑 =================
+    window.startFreeze = function(type) {
+        const currentReal = getRealWeeks();
+        const currentEffective = currentReal - globalState.offset;
+        globalState.frozenEffective = currentEffective;
+        globalState.freezeMode = type;
+        saveToCloud().then(() => {
+            alert((type === 'holiday' ? "寒暑假" : "临时冻结") + "已开启！");
+        });
+    }
+
+    window.endFreeze = function() {
+        if (globalState.frozenEffective !== null) {
+            const currentReal = getRealWeeks();
+            globalState.offset = currentReal - globalState.frozenEffective;
+        }
+        globalState.freezeMode = 'none';
+        globalState.frozenEffective = 0; 
+        saveToCloud().then(() => {
+            alert(`排班已恢复！`);
+        });
+    }
+
+    window.adjustOffset = function(change) {
+        globalState.offset += change;
+        saveToCloud();
+    }
+
+    // 后台触发
+    let clickCount = 0;
+    let clickTimer = null;
+    document.getElementById('secretTrigger').addEventListener('click', () => {
+        clickCount++;
+        clearTimeout(clickTimer);
+        clickTimer = setTimeout(() => { clickCount = 0; }, 1000);
+        if (clickCount >= 5) {
+            clickCount = 0;
+            if (prompt("请输入管理员密码：") === ADMIN_PASSWORD) {
+                document.getElementById('adminModal').style.display = 'flex';
+                updateUI(); 
+            }
+        }
+    });
+
+    function closeAdmin() { document.getElementById('adminModal').style.display = 'none'; }
+    document.getElementById('adminModal').addEventListener('click', (e) => { 
+        if (e.target === document.getElementById('adminModal')) closeAdmin(); 
+    });
+
+    setInterval(updateDateDisplay, 1000 * 60 * 60);
+</script>
+
+</body>
+</html>
