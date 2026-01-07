@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>卫生间值日表 (云同步·终极版)</title>
+<script src="//code.bdstatic.com/npm/leancloud-storage@4.12.0/dist/av-min.js"></script>
+<style>
+    /* 样式区 */
+    body{font-family:"Microsoft YaHei",sans-serif;background-color:#f0f2f5;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;user-select:none}.container{background:white;padding:25px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.08);width:90%;max-width:380px;text-align:center;position:relative}h1{color:#333;margin:0 0 5px 0;font-size:1.4rem}h2{color:#007bff;margin:0 0 20px 0;font-size:1.1rem;font-weight:normal}.date-display{background:#e9ecef;color:#555;padding:8px;border-radius:6px;font-size:.9rem;margin-bottom:20px}.schedule-box{border:1px solid #eee;border-radius:8px;overflow:hidden;position:relative;min-height:150px}.schedule-row{display:flex;border-bottom:1px solid #eee}.schedule-row:last-child{border-bottom:none}.day-col{flex:1;padding:15px 10px;background:#fafafa;color:#666;font-weight:bold;border-right:1px solid #eee;display:flex;align-items:center;justify-content:center}.teacher-col{flex:2;padding:15px 10px;color:#333;font-size:1.1rem;display:flex;align-items:center;justify-content:center}.pause-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,.98);display:none;flex-direction:column;justify-content:center;align-items:center;z-index:5}.pause-overlay.active{display:flex}.pause-icon{font-size:3rem;margin-bottom:10px;color:#ffc107}.pause-text{font-size:1.2rem;color:#555;font-weight:bold}.today-highlight .day-col{background:#e3f2fd;color:#007bff}.today-highlight .teacher-col{background:#e3f2fd;color:#007bff;font-weight:bold}.skip-note{font-size:.7rem;color:#f50;display:block;margin-top:2px;font-weight:normal}.status-badge{display:inline-block;margin-top:15px;padding:5px 12px;border-radius:15px;font-size:.85rem}.status-rest{background:#e2e6ea;color:#6c757d}.status-duty{background:#d4edda;color:#155724}.status-paused{background:#fff3cd;color:#856404;border:1px solid #ffeeba}.footer{margin-top:15px;font-size:.75rem;color:#aaa;padding:10px}.admin-modal{display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,.98);border-radius:12px;z-index:10;flex-direction:column;justify-content:center;align-items:center}.admin-modal.active{display:flex}.op-status{font-size:.85rem;color:#e67e22;font-weight:bold;height:20px;margin-bottom:5px}.toggle-btn{width:85%;padding:12px;border-radius:8px;border:none;color:white;cursor:pointer;margin-bottom:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 6px rgba(0,0,0,0.1)}.toggle-main-text{font-size:1.1rem;font-weight:bold;margin-bottom:4px}.toggle-sub-text{font-size:.8rem;opacity:.9;background:rgba(0,0,0,0.15);padding:2px 8px;border-radius:10px}.toggle-on{background:linear-gradient(135deg,#28a745,#20c997)}.toggle-off{background:linear-gradient(135deg,#ffc107,#fd7e14)}.preview-card{background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;width:85%;padding:15px;margin-bottom:10px;text-align:left}.preview-row{display:flex;justify-content:space-between;margin-bottom:5px;font-size:1rem;color:#333}.admin-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:85%;margin-bottom:10px}.admin-btn{padding:10px 5px;background:#007bff;color:white;border:none;border-radius:8px;cursor:pointer;font-size:.9rem}.btn-red{background:#dc3545}.btn-green{background:#28a745}.btn-close{background:#343a40;width:85%;padding:12px;margin-top:10px}.loading-mask{position:absolute;top:0;left:0;width:100%;height:100%;background:white;z-index:20;display:flex;justify-content:center;align-items:center;color:#666;font-size:0.9rem;}
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div id="loadingMask" class="loading-mask">☁️ 正在同步云端数据...</div>
+
+    <h1>🚽 卫生间值日表</h1>
+    <h2 id="roundInfo">排班计算中...</h2>
+    <div class="date-display" id="dateInfo"></div>
+
+    <div class="schedule-box">
+        <div id="pauseOverlay" class="pause-overlay">
+            <div class="pause-icon">☕</div>
+            <div class="pause-text">假期暂停中</div>
+            <div style="font-size:0.9rem; color:#999; margin-top:5px;">系统已休眠，排班顺延</div>
+        </div>
+        <div class="schedule-row" id="row-wed"><div class="day-col">周三</div><div class="teacher-col" id="t-wed">--</div></div>
+        <div class="schedule-row" id="row-thu"><div class="day-col">周四</div><div class="teacher-col" id="t-thu">--</div></div>
+        <div class="schedule-row" id="row-fri"><div class="day-col">周五</div><div class="teacher-col" id="t-fri">--</div></div>
+    </div>
+
+    <div id="statusBadge" class="status-badge"></div>
+
+    <div class="footer" id="triggerZone">
+        排班顺序：石→丁→萌→笑→何→康→韩<br>
+        (管理员点击此处进入云控台)
+    </div>
+
+    <div class="admin-modal" id="adminPanel">
+        <h3 style="margin:15px 0 10px 0;">🛠 云端控制台</h3>
+        
+        <button id="mainToggleBtn" class="toggle-btn" onclick="toggleCloudPause()">
+            <span class="toggle-main-text">读取中...</span>
+        </button>
+
+        <div class="preview-card">
+            <div class="preview-title">云端 Offset 值：<b id="disp-offset">--</b></div>
+            <div class="preview-row"><span>周三:</span> <span id="pre-wed">--</span></div>
+            <div class="preview-row"><span>周四:</span> <span id="pre-thu">--</span></div>
+            <div class="preview-row"><span>周五:</span> <span id="pre-fri">--</span></div>
+        </div>
+        
+        <div id="opStatus" class="op-status"></div>
+
+        <div class="admin-controls">
+            <button class="admin-btn btn-red" onclick="adjustCloudOffset(-1)">⏪ 往回一位</button>
+            <button class="admin-btn btn-green" onclick="adjustCloudOffset(1)">往后一位 ⏩</button>
+            <button class="admin-btn btn-red" onclick="adjustCloudOffset(-3)">⏪ 往回一周</button>
+            <button class="admin-btn btn-green" onclick="adjustCloudOffset(3)"> 往后一周 ⏩</button>
+        </div>
+
+        <button class="admin-btn btn-close" onclick="closeAdmin()">关闭 / 返回</button>
+    </div>
+</div>
+
+<script>
+    // ============================================
+    // 🔴 你的云端钥匙 (已自动填好)
+    // ============================================
+    const LC_APP_ID = "1OHISQN99CFPAQn6K0aZQRpm-gzGzoHsz"; 
+    const LC_APP_KEY = "y0pWlEyJrFr3P4LYu7GkIYfK";
+    // 默认使用 avoscloud.com，如果LeanCloud提示必须绑定域名，请在控制台绑定后替换此处
+    const LC_SERVER_URL = "https://avoscloud.com"; 
+    // ============================================
+
+    // 核心数据
+    const teachers = ["石老师", "丁老师", "萌萌老师", "笑笑老师", "何老师", "康康老师", "韩老师"];
+    const anchorDate = new Date(2026, 0, 7); 
+    const defaultStartIdx = 4; 
+
+    // 全局状态缓存
+    let globalState = { isPaused: false, offset: 0, objectId: null };
+
+    // 初始化云端
+    let isCloudReady = false;
+    try {
+        if(LC_APP_ID.length > 10) {
+            AV.init({ appId: LC_APP_ID, appKey: LC_APP_KEY, serverURLs: LC_SERVER_URL });
+            isCloudReady = true;
+        }
+    } catch(e) { console.error("云端初始化失败", e); }
+
+    // --- 云端读写核心函数 ---
+    
+    // 1. 从云端拉取数据
+    async function fetchCloudData() {
+        if(!isCloudReady) return alert("请先配置 AppID 和 AppKey");
+        
+        const query = new AV.Query('RosterConfig');
+        try {
+            const results = await query.find();
+            if (results.length > 0) {
+                // 如果云端有数据，读取第一条
+                const data = results[0];
+                globalState.isPaused = data.get('isPaused');
+                globalState.offset = data.get('offset');
+                globalState.objectId = data.id; // 记住ID以便下次更新
+            } else {
+                // 如果云端是空的，创建一个新的默认配置
+                const Config = AV.Object.extend('RosterConfig');
+                const config = new Config();
+                config.set('isPaused', false);
+                config.set('offset', 0);
+                const saved = await config.save();
+                globalState.objectId = saved.id;
+            }
+            // 数据拉取完毕，刷新界面
+            document.getElementById('loadingMask').style.display = 'none';
+            render();
+        } catch (error) {
+            console.error(error);
+            document.getElementById('loadingMask').innerText = "加载失败，请刷新或检查网络";
+            
+            // 如果报错是 403 域名限制，提示用户
+            if(error.message && error.message.includes("API Domain")) {
+                alert("LeanCloud 提示：需要绑定 API 自定义域名才能使用。");
+            }
+
+            // 失败也渲染一次默认界面
+            setTimeout(() => { document.getElementById('loadingMask').style.display = 'none'; render(); }, 2000);
+        }
+    }
+
+    // 2. 保存数据到云端
+    async function saveToCloud() {
+        if(!globalState.objectId) return;
+        
+        document.getElementById('opStatus').innerText = "☁️ 正在保存到云端...";
+        const config = AV.Object.createWithoutData('RosterConfig', globalState.objectId);
+        config.set('isPaused', globalState.isPaused);
+        config.set('offset', globalState.offset);
+        
+        try {
+            await config.save();
+            document.getElementById('opStatus').innerText = "✅ 云端同步成功！所有人已更新";
+            document.getElementById('opStatus').style.color = "green";
+            render();
+        } catch (error) {
+            alert("保存失败：" + error.message);
+        }
+    }
+
+    // --- 操作函数 ---
+    function toggleCloudPause() {
+        globalState.isPaused = !globalState.isPaused;
+        saveToCloud(); // 立即同步
+    }
+
+    function adjustCloudOffset(delta) {
+        globalState.offset = globalState.offset + delta;
+        saveToCloud(); // 立即同步
+    }
+
+    // --- 核心算法 ---
+    function calculateRoster() {
+        const today = new Date();
+        const offset = globalState.offset; // 读全局变量
+        
+        const getWed = (d) => {
+            let date = new Date(d); date.setHours(0,0,0,0);
+            let day = date.getDay(); 
+            let diff = 3 - day; 
+            date.setDate(date.getDate() + diff);
+            return date;
+        };
+        const baseWed = getWed(anchorDate);
+        const currentWed = getWed(today);
+        const diffWeeks = Math.round((currentWed - baseWed) / (1000 * 60 * 60 * 24 * 7));
+
+        let startPointer = defaultStartIdx + offset;
+        let weeksToRun = diffWeeks > 0 ? diffWeeks : 0;
+        let ptr = startPointer;
+
+        for (let i = 0; i <= weeksToRun; i++) {
+            let weekRoster = [];
+            let p1 = ((ptr % 7) + 7) % 7; weekRoster.push({ name: teachers[p1], rawName: teachers[p1], note: "" }); ptr++;
+            let p2 = ((ptr % 7) + 7) % 7; weekRoster.push({ name: teachers[p2], rawName: teachers[p2], note: "" }); ptr++;
+            let p3 = ((ptr % 7) + 7) % 7;
+            if (teachers[p3] === "石老师") { ptr++; let pReal = ((ptr % 7) + 7) % 7; weekRoster.push({ name: teachers[pReal], rawName: teachers[pReal], note: "<span class='skip-note'>(石顺延)</span>" }); ptr = p3; } 
+            else { weekRoster.push({ name: teachers[p3], rawName: teachers[p3], note: "" }); ptr++; }
+            if (i === weeksToRun) return weekRoster;
+        }
+    }
+
+    // --- 渲染函数 ---
+    function render() {
+        const today = new Date();
+        const roster = calculateRoster();
+        const weekDay = today.getDay();
+        const dateStr = today.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+        
+        document.getElementById('dateInfo').innerText = dateStr;
+        document.getElementById('roundInfo').innerText = "智能排班系统 (云同步版)";
+
+        const isPaused = globalState.isPaused;
+        const overlay = document.getElementById('pauseOverlay');
+        const badge = document.getElementById('statusBadge');
+
+        if (isPaused) {
+            overlay.classList.add('active');
+            badge.className = 'status-badge status-paused';
+            badge.innerText = "🛌 系统休眠中...";
+        } else {
+            overlay.classList.remove('active');
+            if(roster && roster.length === 3) {
+                document.getElementById('t-wed').innerHTML = roster[0].name + roster[0].note;
+                document.getElementById('t-thu').innerHTML = roster[1].name + roster[1].note;
+                document.getElementById('t-fri').innerHTML = roster[2].name + roster[2].note;
+                const rows = {3: 'row-wed', 4: 'row-thu', 5: 'row-fri'};
+                const names = {3: roster[0].rawName, 4: roster[1].rawName, 5: roster[2].rawName};
+                document.querySelectorAll('.schedule-row').forEach(el => el.classList.remove('today-highlight'));
+                if (weekDay >= 3 && weekDay <= 5) {
+                    document.getElementById(rows[weekDay]).classList.add('today-highlight');
+                    badge.className = 'status-badge status-duty';
+                    badge.innerText = `🧹 今日值日：${names[weekDay]}`;
+                } else {
+                    badge.className = 'status-badge status-rest';
+                    badge.innerText = "☕ 今日无值日安排 (休息)";
+                }
+            }
+        }
+        updateAdminView();
+    }
+
+    function updateAdminView() {
+        const btn = document.getElementById('mainToggleBtn');
+        const isPaused = globalState.isPaused;
+        document.getElementById('disp-offset').innerText = globalState.offset;
+        
+        if (isPaused) {
+            btn.className = 'toggle-btn toggle-on';
+            btn.innerHTML = `<span class="toggle-main-text">▶️ 结束假期 (恢复排班)</span><span class="toggle-sub-text">当前状态：🔴 已暂停 (假期模式)</span>`;
+        } else {
+            btn.className = 'toggle-btn toggle-off';
+            btn.innerHTML = `<span class="toggle-main-text">⏸️ 开启假期模式 (暂停)</span><span class="toggle-sub-text">当前状态：🟢 正常运行中</span>`;
+        }
+        
+        const roster = calculateRoster();
+        if(roster && roster.length === 3) {
+            document.getElementById('pre-wed').innerText = roster[0].rawName;
+            document.getElementById('pre-thu').innerText = roster[1].rawName;
+            let friText = roster[2].rawName;
+            if (roster[2].note.includes("顺延")) friText += " (替补)";
+            document.getElementById('pre-fri').innerText = friText;
+        }
+    }
+
+    // 交互
+    let clickCount = 0; let timer;
+    document.getElementById('triggerZone').addEventListener('click', () => {
+        clickCount++; clearTimeout(timer); timer = setTimeout(() => clickCount=0, 2000);
+        if(clickCount===5) { 
+            clickCount = 0; 
+            if(prompt("输入管理员密码") === "888") {
+                document.getElementById('adminPanel').classList.add('active'); 
+            }
+        }
+    });
+    function closeAdmin() { document.getElementById('adminPanel').classList.remove('active'); }
+
+    // 🚀 启动！
+    fetchCloudData(); // 页面加载时，自动去云端拉取最新状态
+</script>
+</body>
+</html>
