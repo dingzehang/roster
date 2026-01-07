@@ -3,15 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>卫生间值日表 (相对调节版)</title>
+<title>卫生间值日表 (预览增强版)</title>
 <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
 <style>
     body{font-family:"Microsoft YaHei",sans-serif;background-color:#f0f2f5;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;user-select:none}.container{background:white;padding:25px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.08);width:90%;max-width:380px;text-align:center;position:relative}h1{color:#333;margin:0 0 5px 0;font-size:1.4rem}h2{color:#007bff;margin:0 0 20px 0;font-size:1.1rem;font-weight:normal}.date-display{background:#e9ecef;color:#555;padding:8px;border-radius:6px;font-size:.9rem;margin-bottom:20px}.schedule-box{border:1px solid #eee;border-radius:8px;overflow:hidden;position:relative;min-height:150px}.schedule-row{display:flex;border-bottom:1px solid #eee}.schedule-row:last-child{border-bottom:none}.day-col{flex:1;padding:15px 10px;background:#fafafa;color:#666;font-weight:bold;border-right:1px solid #eee;display:flex;align-items:center;justify-content:center}.teacher-col{flex:2;padding:15px 10px;color:#333;font-size:1.1rem;display:flex;align-items:center;justify-content:center}.pause-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,.98);display:none;flex-direction:column;justify-content:center;align-items:center;z-index:5}.pause-overlay.active{display:flex}.pause-icon{font-size:3rem;margin-bottom:10px;color:#ffc107}.pause-text{font-size:1.2rem;color:#555;font-weight:bold}.today-highlight .day-col{background:#e3f2fd;color:#007bff}.today-highlight .teacher-col{background:#e3f2fd;color:#007bff;font-weight:bold}.skip-note{font-size:.7rem;color:#f50;display:block;margin-top:2px;font-weight:normal}.status-badge{display:inline-block;margin-top:15px;padding:5px 12px;border-radius:15px;font-size:.85rem}.status-rest{background:#e2e6ea;color:#6c757d}.status-duty{background:#d4edda;color:#155724}.status-paused{background:#fff3cd;color:#856404;border:1px solid #ffeeba}.footer{margin-top:15px;font-size:.75rem;color:#aaa;padding:10px}.admin-modal{display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,.98);border-radius:12px;z-index:10;flex-direction:column;justify-content:center;align-items:center}.admin-modal.active{display:flex}.op-status{font-size:.85rem;color:#e67e22;font-weight:bold;height:20px;margin-bottom:5px}.toggle-btn{width:85%;padding:12px;border-radius:8px;border:none;color:white;cursor:pointer;margin-bottom:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 6px rgba(0,0,0,0.1)}.toggle-main-text{font-size:1.1rem;font-weight:bold;margin-bottom:4px}.toggle-sub-text{font-size:.8rem;opacity:.9;background:rgba(0,0,0,0.15);padding:2px 8px;border-radius:10px}.toggle-on{background:linear-gradient(135deg,#28a745,#20c997)}.toggle-off{background:linear-gradient(135deg,#ffc107,#fd7e14)}.preview-card{background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;width:85%;padding:15px;margin-bottom:10px;text-align:left}.preview-row{display:flex;justify-content:space-between;margin-bottom:5px;font-size:1rem;color:#333}.admin-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:85%;margin-bottom:10px}.admin-btn{padding:10px 5px;background:#007bff;color:white;border:none;border-radius:8px;cursor:pointer;font-size:.9rem}.btn-red{background:#dc3545}.btn-green{background:#28a745}.btn-close{background:#343a40;width:85%;padding:12px;margin-top:10px}.loading-mask{position:absolute;top:0;left:0;width:100%;height:100%;background:white;z-index:20;display:flex;justify-content:center;align-items:center;color:#666;font-size:0.9rem;flex-direction:column;}
     
-    .manual-set-box { display:flex; gap:5px; width:85%; margin-bottom:10px; border-top:1px dashed #ddd; padding-top:10px;}
-    .manual-input { flex:1; padding:8px; border:1px solid #ccc; border-radius:6px; text-align:center; }
-    .manual-btn { padding:8px 15px; background:#6c757d; color:white; border:none; border-radius:6px; cursor:pointer; }
-    .debug-info { font-size: 0.7rem; color: #aaa; margin-top: 5px; }
+    .debug-info { font-size: 0.7rem; color: #aaa; margin-top: 5px; border-top: 1px dashed #ddd; padding-top: 5px; width: 100%; text-align: center;}
+    /* 新增预览列表样式 */
+    .preview-list { margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee; }
+    .preview-item { display: flex; justify-content: space-between; font-size: 0.95rem; color: #555; margin-bottom: 4px; }
+    .preview-item b { color: #333; }
 </style>
 </head>
 <body>
@@ -53,8 +54,14 @@
 
         <div class="preview-card">
             <div class="preview-title">本次微调：<b id="disp-session-offset" style="color:#e67e22;font-size:1.4em">0</b></div>
+            
+            <div class="preview-list">
+                <div class="preview-item"><span>周三:</span> <b id="pre-wed">--</b></div>
+                <div class="preview-item"><span>周四:</span> <b id="pre-thu">--</b></div>
+                <div class="preview-item"><span>周五:</span> <b id="pre-fri">--</b></div>
+            </div>
+
             <div class="debug-info">后台总偏移值 (Real Offset)：<span id="disp-real-offset">--</span></div>
-            <div style="font-size:0.75rem; color:#888; margin-top:5px;">点击下方按钮进行微调（基于当前状态）</div>
         </div>
 
         <div class="admin-controls">
@@ -65,13 +72,6 @@
         </div>
         
         <div id="opStatus" class="op-status"></div>
-
-        <div class="manual-set-box">
-            <input type="number" id="manualOffsetInput" class="manual-input" placeholder="输入绝对值">
-            <button class="manual-btn" onclick="manualSetAbsOffset()">强制重置总值</button>
-        </div>
-        <div style="font-size:0.6rem; color:#ccc; margin-bottom:10px">注：强制重置会覆盖之前的微调记录</div>
-
         <button class="admin-btn btn-close" onclick="closeAdmin()">关闭 / 返回</button>
     </div>
 </div>
@@ -87,10 +87,7 @@
     const anchorDate = new Date(2026, 0, 7); 
     const defaultStartIdx = 4; 
 
-    // globalState.offset 存储的是【云端真实的绝对值】，保证排班正确
     let globalState = { isPaused: false, offset: 0, objectId: null };
-    
-    // sessionDelta 存储的是【本次打开面板的操作数】，每次打开都为0
     let sessionDelta = 0; 
     let isCloudReady = false;
 
@@ -168,7 +165,7 @@
     }
 
     function toggleButtons(disabled) {
-        const btns = document.querySelectorAll('.admin-btn, .toggle-btn, .manual-btn');
+        const btns = document.querySelectorAll('.admin-btn, .toggle-btn');
         btns.forEach(btn => btn.disabled = disabled);
     }
 
@@ -177,24 +174,10 @@
         saveToCloud(); 
     }
 
-    // 🟢 核心修改：相对调整逻辑
-    // 每次点击，修改的是 globalState.offset（为了正确），但界面显示的是 sessionDelta
     function adjustRelative(delta) {
-        // 更新真实数据
         globalState.offset = globalState.offset + delta;
-        // 更新本次显示的计数
         sessionDelta = sessionDelta + delta;
-        
         saveToCloud(); 
-    }
-    
-    // 强制设置绝对值（救急用）
-    function manualSetAbsOffset() {
-        const inputVal = document.getElementById('manualOffsetInput').value;
-        if(inputVal === "") { alert("请输入数字"); return; }
-        globalState.offset = parseInt(inputVal);
-        sessionDelta = 0; // 强制设置后，本次计数归零
-        saveToCloud();
     }
 
     function calculateRoster() {
@@ -276,11 +259,20 @@
         const btn = document.getElementById('mainToggleBtn');
         const isPaused = globalState.isPaused;
         
-        // 🟢 核心：UI显示的是 sessionDelta（每次打开都是0），但保存的是 offset
+        // 显示微调数
         document.getElementById('disp-session-offset').innerText = (sessionDelta > 0 ? "+" : "") + sessionDelta;
-        
-        // 用小字显示真实的绝对偏移值，方便管理员核对
+        // 显示真实后台值（小字）
         document.getElementById('disp-real-offset').innerText = globalState.offset;
+
+        // 🟢 核心功能：更新预览界面
+        const roster = calculateRoster();
+        if(roster && roster.length === 3) {
+            document.getElementById('pre-wed').innerText = roster[0].rawName;
+            document.getElementById('pre-thu').innerText = roster[1].rawName;
+            let friText = roster[2].rawName;
+            if (roster[2].note.includes("顺延")) friText += " (替补)";
+            document.getElementById('pre-fri').innerText = friText;
+        }
         
         if (isPaused) {
             btn.className = 'toggle-btn toggle-on';
@@ -297,9 +289,7 @@
         if(clickCount===5) { 
             clickCount = 0; 
             if(prompt("输入管理员密码") === "888") {
-                // 🟢 每次打开管理面板，把本次显示的微调数归零，让用户从零开始调
-                sessionDelta = 0;
-                
+                sessionDelta = 0; // 打开时归零微调数
                 updateAdminView();
                 document.getElementById('adminPanel').classList.add('active'); 
             }
