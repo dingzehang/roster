@@ -3,17 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>卫生间值日表 (云同步·终极版)</title>
-<script src="https://code.bdstatic.com/npm/leancloud-storage@4.12.0/dist/av-min.js"></script>
+<title>卫生间值日表 (修复增强版)</title>
+<script src="https://cdn.jsdelivr.net/npm/leancloud-storage@4.15.0/dist/av-min.js"></script>
 <style>
-    /* 样式区 */
-    body{font-family:"Microsoft YaHei",sans-serif;background-color:#f0f2f5;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;user-select:none}.container{background:white;padding:25px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.08);width:90%;max-width:380px;text-align:center;position:relative}h1{color:#333;margin:0 0 5px 0;font-size:1.4rem}h2{color:#007bff;margin:0 0 20px 0;font-size:1.1rem;font-weight:normal}.date-display{background:#e9ecef;color:#555;padding:8px;border-radius:6px;font-size:.9rem;margin-bottom:20px}.schedule-box{border:1px solid #eee;border-radius:8px;overflow:hidden;position:relative;min-height:150px}.schedule-row{display:flex;border-bottom:1px solid #eee}.schedule-row:last-child{border-bottom:none}.day-col{flex:1;padding:15px 10px;background:#fafafa;color:#666;font-weight:bold;border-right:1px solid #eee;display:flex;align-items:center;justify-content:center}.teacher-col{flex:2;padding:15px 10px;color:#333;font-size:1.1rem;display:flex;align-items:center;justify-content:center}.pause-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,.98);display:none;flex-direction:column;justify-content:center;align-items:center;z-index:5}.pause-overlay.active{display:flex}.pause-icon{font-size:3rem;margin-bottom:10px;color:#ffc107}.pause-text{font-size:1.2rem;color:#555;font-weight:bold}.today-highlight .day-col{background:#e3f2fd;color:#007bff}.today-highlight .teacher-col{background:#e3f2fd;color:#007bff;font-weight:bold}.skip-note{font-size:.7rem;color:#f50;display:block;margin-top:2px;font-weight:normal}.status-badge{display:inline-block;margin-top:15px;padding:5px 12px;border-radius:15px;font-size:.85rem}.status-rest{background:#e2e6ea;color:#6c757d}.status-duty{background:#d4edda;color:#155724}.status-paused{background:#fff3cd;color:#856404;border:1px solid #ffeeba}.footer{margin-top:15px;font-size:.75rem;color:#aaa;padding:10px}.admin-modal{display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,.98);border-radius:12px;z-index:10;flex-direction:column;justify-content:center;align-items:center}.admin-modal.active{display:flex}.op-status{font-size:.85rem;color:#e67e22;font-weight:bold;height:20px;margin-bottom:5px}.toggle-btn{width:85%;padding:12px;border-radius:8px;border:none;color:white;cursor:pointer;margin-bottom:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 6px rgba(0,0,0,0.1)}.toggle-main-text{font-size:1.1rem;font-weight:bold;margin-bottom:4px}.toggle-sub-text{font-size:.8rem;opacity:.9;background:rgba(0,0,0,0.15);padding:2px 8px;border-radius:10px}.toggle-on{background:linear-gradient(135deg,#28a745,#20c997)}.toggle-off{background:linear-gradient(135deg,#ffc107,#fd7e14)}.preview-card{background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;width:85%;padding:15px;margin-bottom:10px;text-align:left}.preview-row{display:flex;justify-content:space-between;margin-bottom:5px;font-size:1rem;color:#333}.admin-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:85%;margin-bottom:10px}.admin-btn{padding:10px 5px;background:#007bff;color:white;border:none;border-radius:8px;cursor:pointer;font-size:.9rem}.btn-red{background:#dc3545}.btn-green{background:#28a745}.btn-close{background:#343a40;width:85%;padding:12px;margin-top:10px}.loading-mask{position:absolute;top:0;left:0;width:100%;height:100%;background:white;z-index:20;display:flex;justify-content:center;align-items:center;color:#666;font-size:0.9rem;}
+    body{font-family:"Microsoft YaHei",sans-serif;background-color:#f0f2f5;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;user-select:none}.container{background:white;padding:25px;border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,0.08);width:90%;max-width:380px;text-align:center;position:relative}h1{color:#333;margin:0 0 5px 0;font-size:1.4rem}h2{color:#007bff;margin:0 0 20px 0;font-size:1.1rem;font-weight:normal}.date-display{background:#e9ecef;color:#555;padding:8px;border-radius:6px;font-size:.9rem;margin-bottom:20px}.schedule-box{border:1px solid #eee;border-radius:8px;overflow:hidden;position:relative;min-height:150px}.schedule-row{display:flex;border-bottom:1px solid #eee}.schedule-row:last-child{border-bottom:none}.day-col{flex:1;padding:15px 10px;background:#fafafa;color:#666;font-weight:bold;border-right:1px solid #eee;display:flex;align-items:center;justify-content:center}.teacher-col{flex:2;padding:15px 10px;color:#333;font-size:1.1rem;display:flex;align-items:center;justify-content:center}.pause-overlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,.98);display:none;flex-direction:column;justify-content:center;align-items:center;z-index:5}.pause-overlay.active{display:flex}.pause-icon{font-size:3rem;margin-bottom:10px;color:#ffc107}.pause-text{font-size:1.2rem;color:#555;font-weight:bold}.today-highlight .day-col{background:#e3f2fd;color:#007bff}.today-highlight .teacher-col{background:#e3f2fd;color:#007bff;font-weight:bold}.skip-note{font-size:.7rem;color:#f50;display:block;margin-top:2px;font-weight:normal}.status-badge{display:inline-block;margin-top:15px;padding:5px 12px;border-radius:15px;font-size:.85rem}.status-rest{background:#e2e6ea;color:#6c757d}.status-duty{background:#d4edda;color:#155724}.status-paused{background:#fff3cd;color:#856404;border:1px solid #ffeeba}.footer{margin-top:15px;font-size:.75rem;color:#aaa;padding:10px}.admin-modal{display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,.98);border-radius:12px;z-index:10;flex-direction:column;justify-content:center;align-items:center}.admin-modal.active{display:flex}.op-status{font-size:.85rem;color:#e67e22;font-weight:bold;height:20px;margin-bottom:5px}.toggle-btn{width:85%;padding:12px;border-radius:8px;border:none;color:white;cursor:pointer;margin-bottom:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 4px 6px rgba(0,0,0,0.1)}.toggle-main-text{font-size:1.1rem;font-weight:bold;margin-bottom:4px}.toggle-sub-text{font-size:.8rem;opacity:.9;background:rgba(0,0,0,0.15);padding:2px 8px;border-radius:10px}.toggle-on{background:linear-gradient(135deg,#28a745,#20c997)}.toggle-off{background:linear-gradient(135deg,#ffc107,#fd7e14)}.preview-card{background:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;width:85%;padding:15px;margin-bottom:10px;text-align:left}.preview-row{display:flex;justify-content:space-between;margin-bottom:5px;font-size:1rem;color:#333}.admin-controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:85%;margin-bottom:10px}.admin-btn{padding:10px 5px;background:#007bff;color:white;border:none;border-radius:8px;cursor:pointer;font-size:.9rem}.btn-red{background:#dc3545}.btn-green{background:#28a745}.btn-close{background:#343a40;width:85%;padding:12px;margin-top:10px}.loading-mask{position:absolute;top:0;left:0;width:100%;height:100%;background:white;z-index:20;display:flex;justify-content:center;align-items:center;color:#666;font-size:0.9rem;flex-direction:column;}
 </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="loadingMask" class="loading-mask">☁️ 正在同步云端数据...</div>
+    <div id="loadingMask" class="loading-mask">
+        <div style="font-size:2em;margin-bottom:10px">☁️</div>
+        正在连接云端...<br>
+        <span style="font-size:0.8em;color:#999">(首次加载可能需要3-5秒)</span>
+    </div>
 
     <h1>🚽 卫生间值日表</h1>
     <h2 id="roundInfo">排班计算中...</h2>
@@ -66,48 +69,47 @@
 
 <script>
     // ============================================
-    // 🔴 你的云端钥匙 (已自动填好)
+    // 🔴 核心修复区：使用你提供的ID + 自动推算的共享域名
     // ============================================
     const LC_APP_ID = "1OHISQN99CFPAQn6K0aZQRpm-gzGzoHsz"; 
     const LC_APP_KEY = "y0pWlEyJrFr3P4LYu7GkIYfK";
-    // 默认使用 avoscloud.com，如果LeanCloud提示必须绑定域名，请在控制台绑定后替换此处
-    const LC_SERVER_URL = "https://avoscloud.com"; 
+    // 2. 根据你的AppID前8位，推算出LeanCloud的共享域名
+    const LC_SERVER_URL = "https://1ohisqn9.lc-cn-n1-shared.com"; 
     // ============================================
 
-    // 核心数据
     const teachers = ["石老师", "丁老师", "萌萌老师", "笑笑老师", "何老师", "康康老师", "韩老师"];
     const anchorDate = new Date(2026, 0, 7); 
     const defaultStartIdx = 4; 
 
-    // 全局状态缓存
     let globalState = { isPaused: false, offset: 0, objectId: null };
-
-    // 初始化云端
     let isCloudReady = false;
-    try {
-        if(LC_APP_ID.length > 10) {
+
+    // 初始化检查
+    if (typeof AV === 'undefined') {
+        alert("错误：云端脚本加载失败！\n请检查网络连接。");
+        document.getElementById('loadingMask').innerText = "脚本加载失败";
+    } else {
+        try {
             AV.init({ appId: LC_APP_ID, appKey: LC_APP_KEY, serverURLs: LC_SERVER_URL });
             isCloudReady = true;
+        } catch(e) { 
+            console.error(e);
+            alert("初始化失败：" + e.message);
         }
-    } catch(e) { console.error("云端初始化失败", e); }
+    }
 
-    // --- 云端读写核心函数 ---
-    
-    // 1. 从云端拉取数据
+    // 1. 获取数据
     async function fetchCloudData() {
-        if(!isCloudReady) return alert("请先配置 AppID 和 AppKey");
-        
+        if(!isCloudReady) return;
         const query = new AV.Query('RosterConfig');
         try {
             const results = await query.find();
             if (results.length > 0) {
-                // 如果云端有数据，读取第一条
                 const data = results[0];
                 globalState.isPaused = data.get('isPaused');
                 globalState.offset = data.get('offset');
-                globalState.objectId = data.id; // 记住ID以便下次更新
+                globalState.objectId = data.id;
             } else {
-                // 如果云端是空的，创建一个新的默认配置
                 const Config = AV.Object.extend('RosterConfig');
                 const config = new Config();
                 config.set('isPaused', false);
@@ -115,57 +117,62 @@
                 const saved = await config.save();
                 globalState.objectId = saved.id;
             }
-            // 数据拉取完毕，刷新界面
             document.getElementById('loadingMask').style.display = 'none';
             render();
         } catch (error) {
             console.error(error);
-            document.getElementById('loadingMask').innerText = "加载失败，请刷新或检查网络";
-            
-            // 如果报错是 403 域名限制，提示用户
-            if(error.message && error.message.includes("API Domain")) {
-                alert("LeanCloud 提示：需要绑定 API 自定义域名才能使用。");
-            }
-
-            // 失败也渲染一次默认界面
-            setTimeout(() => { document.getElementById('loadingMask').style.display = 'none'; render(); }, 2000);
+            document.getElementById('loadingMask').innerHTML = 
+                `连接失败<br><span style="font-size:0.6em">错误: ${error.message || '未知错误'}</span><br><button onclick="location.reload()" style="margin-top:10px">刷新重试</button>`;
         }
     }
 
-    // 2. 保存数据到云端
+    // 2. 保存数据（带反馈）
     async function saveToCloud() {
         if(!globalState.objectId) return;
         
-        document.getElementById('opStatus').innerText = "☁️ 正在保存到云端...";
+        // 界面反馈
+        const opDiv = document.getElementById('opStatus');
+        opDiv.innerText = "⏳ 正在提交...";
+        opDiv.style.color = "orange";
+        
         const config = AV.Object.createWithoutData('RosterConfig', globalState.objectId);
         config.set('isPaused', globalState.isPaused);
         config.set('offset', globalState.offset);
         
         try {
             await config.save();
-            document.getElementById('opStatus').innerText = "✅ 云端同步成功！所有人已更新";
-            document.getElementById('opStatus').style.color = "green";
+            opDiv.innerText = "✅ 同步成功！";
+            opDiv.style.color = "green";
+            // 成功提示消失
+            setTimeout(() => { if(opDiv.innerText.includes("成功")) opDiv.innerText=""; }, 2000);
             render();
         } catch (error) {
-            alert("保存失败：" + error.message);
+            alert("保存失败！请截图发给技术人员：\n" + error.message);
+            opDiv.innerText = "❌ 提交失败";
+            opDiv.style.color = "red";
         }
     }
 
     // --- 操作函数 ---
     function toggleCloudPause() {
+        // 先给用户一个反应，防止以为没点上
+        document.getElementById('mainToggleBtn').innerHTML = `<span class="toggle-main-text">⏳ 处理中...</span>`;
+        
         globalState.isPaused = !globalState.isPaused;
-        saveToCloud(); // 立即同步
+        saveToCloud(); 
     }
 
     function adjustCloudOffset(delta) {
+        // 简单的防抖动提示
+        document.getElementById('opStatus').innerText = "⏳ 计算中...";
         globalState.offset = globalState.offset + delta;
-        saveToCloud(); // 立即同步
+        saveToCloud(); 
     }
 
     // --- 核心算法 ---
     function calculateRoster() {
         const today = new Date();
-        const offset = globalState.offset; // 读全局变量
+        const offset = globalState.offset; 
         
         const getWed = (d) => {
             let date = new Date(d); date.setHours(0,0,0,0);
@@ -193,7 +200,6 @@
         }
     }
 
-    // --- 渲染函数 ---
     function render() {
         const today = new Date();
         const roster = calculateRoster();
@@ -256,7 +262,6 @@
         }
     }
 
-    // 交互
     let clickCount = 0; let timer;
     document.getElementById('triggerZone').addEventListener('click', () => {
         clickCount++; clearTimeout(timer); timer = setTimeout(() => clickCount=0, 2000);
@@ -270,8 +275,7 @@
     function closeAdmin() { document.getElementById('adminPanel').classList.remove('active'); }
 
     // 🚀 启动！
-    fetchCloudData(); // 页面加载时，自动去云端拉取最新状态
+    fetchCloudData(); 
 </script>
 </body>
-
 </html>
